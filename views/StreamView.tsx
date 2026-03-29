@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { api } from "../lib/api";
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { StatusBar } from '@capacitor/status-bar';
+import { CapacitorHttp } from '@capacitor/core';
 import { auth } from "../lib/firebase";
 
 export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: string, onBack: () => void }) {
@@ -62,10 +63,12 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
 
   const fetchComments = async () => {
     try {
-      const res = await fetch(`http://165.22.253.30:8010/api/comments/${chapterUrlId}`);
-      const json = await res.json();
-      if (json.success) {
-        setComments(json.data);
+      const res = await CapacitorHttp.get({
+        url: `http://165.22.253.30:8010/api/comments/${chapterUrlId}`
+      });
+      const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+      if (data && data.success) {
+        setComments(data.data);
       }
     } catch (error) {}
   };
@@ -79,25 +82,25 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
     if (!newComment.trim() || !user) return;
     setIsSubmitting(true);
     try {
-      const res = await fetch(`http://165.22.253.30:8010/api/comments`, {
-        method: 'POST',
+      const res = await CapacitorHttp.post({
+        url: `http://165.22.253.30:8010/api/comments`,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        data: {
           chapter_id: chapterUrlId,
           user_name: user.displayName || "Wibu Anonim",
           user_photo: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'A'}&background=10b981&color=fff`,
           comment_text: newComment
-        })
+        }
       });
-      const json = await res.json();
-      if (json.success) {
+      const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+      if (data && data.success) {
         setNewComment("");
         fetchComments();
       } else {
         alert("Gagal kirim komentar ke database");
       }
-    } catch (error) {
-      alert("Error jaringan saat kirim komentar.");
+    } catch (error: any) {
+      alert("Error jaringan: " + JSON.stringify(error));
     } finally {
       setIsSubmitting(false);
     }
