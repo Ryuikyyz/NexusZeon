@@ -493,6 +493,7 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
                       {c.user_name}
                       {c.role === 'own' && <img src="/assets/icons/centang.png" alt="Verified" className="w-3.5 h-3.5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
                       {c.role === 'admin' && <img src="/assets/icons/centangmr.png" alt="Admin" className="w-3.5 h-3.5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
+                      {c.active_title && <img src={`/assets/title/${c.active_title}.png`} className="h-3 sm:h-4 ml-1 object-contain" onError={(e: any) => e.target.style.display='none'} />}
                     </span>
                     <span className="text-[#666] text-[10px]">
                       {new Date(c.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
