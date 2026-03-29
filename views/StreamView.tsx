@@ -451,11 +451,11 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
         <div className="px-4 mt-6 mb-8 pt-6 border-t border-[#1a1a1a]">
           <h3 className="text-white text-sm font-medium mb-4">{comments.length} Comments</h3>
           
-          <div className="flex gap-3 mb-8">
+          <div className="flex gap-4 mb-8">
             <img 
               src={user?.photoURL || "/assets/placeholder/pc.png"} 
               alt="User" 
-              className="w-8 h-8 rounded-full object-cover border border-[#333]"
+              className="w-10 h-10 rounded-full object-cover border border-[#333]"
             />
             <div className="flex-1 flex flex-col gap-2">
               <input 
@@ -478,22 +478,27 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
             </div>
           </div>
 
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-6">
             {comments.map((c: any) => (
-              <div key={c.id} className="flex gap-3">
-                <img src={c.user_photo} alt={c.user_name} className="w-8 h-8 rounded-full object-cover border border-[#222]" />
+              <div key={c.id} className="flex gap-4">
+                <div className="relative w-10 h-10 flex-shrink-0 mt-1">
+                  <img src={c.user_photo} alt={c.user_name} className="w-10 h-10 rounded-full object-cover border border-[#222]" />
+                  {c.active_border && (
+                    <img src={`/assets/icons/${c.active_border}.png`} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] max-w-none pointer-events-none object-contain z-10" onError={(e: any) => e.target.style.display='none'} />
+                  )}
+                </div>
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-white text-[11px] font-bold flex items-center gap-1">
+                    <span className="text-white text-[12px] font-bold flex items-center gap-1">
                       {c.user_name}
-                      {c.role === 'own' && <img src="/assets/icons/centang.png" alt="Verified" className="w-3 h-3 object-contain" onError={(e: any) => e.target.style.display='none'} />}
-                      {c.role === 'admin' && <img src="/assets/icons/centangmr.png" alt="Admin" className="w-3 h-3 object-contain" onError={(e: any) => e.target.style.display='none'} />}
+                      {c.role === 'own' && <img src="/assets/icons/centang.png" alt="Verified" className="w-3.5 h-3.5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
+                      {c.role === 'admin' && <img src="/assets/icons/centangmr.png" alt="Admin" className="w-3.5 h-3.5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
                     </span>
-                    <span className="text-[#666] text-[9px]">
+                    <span className="text-[#666] text-[10px]">
                       {new Date(c.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
                     </span>
                   </div>
-                  <p className="text-[#ccc] text-[11px] mt-1 leading-relaxed">{c.comment_text}</p>
+                  <p className="text-[#ccc] text-[12px] mt-1 leading-relaxed">{c.comment_text}</p>
                 </div>
               </div>
             ))}
