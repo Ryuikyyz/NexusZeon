@@ -5,6 +5,7 @@ export default function DetailView({ urlId, onOpenStream, onBack }: { urlId: str
   const [detail, setDetail] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const fetchDetail = async (retryAttempt = 0) => {
     if (retryAttempt === 0) setLoading(true);
@@ -25,6 +26,37 @@ export default function DetailView({ urlId, onOpenStream, onBack }: { urlId: str
   useEffect(() => {
     fetchDetail();
   }, [urlId]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("zedx_favorites");
+      if (stored) {
+        const favs = JSON.parse(stored);
+        setIsFavorite(favs.some((f: any) => f.urlId === urlId));
+      }
+    } catch (e) {}
+  }, [urlId]);
+
+  const toggleFavorite = () => {
+    if (!detail) return;
+    try {
+      const stored = localStorage.getItem("zedx_favorites");
+      let favs = stored ? JSON.parse(stored) : [];
+
+      if (isFavorite) {
+        favs = favs.filter((f: any) => f.urlId !== urlId);
+        setIsFavorite(false);
+      } else {
+        favs.unshift({
+          urlId,
+          title: detail.judul || "Anime Terkini",
+          coverUrl: detail.cover || "/assets/placeholder/pc.png"
+        });
+        setIsFavorite(true);
+      }
+      localStorage.setItem("zedx_favorites", JSON.stringify(favs));
+    } catch (e) {}
+  };
 
   const DetailSkeleton = () => (
     <div className="animate-pulse flex flex-col w-full h-screen bg-black">
@@ -53,7 +85,6 @@ export default function DetailView({ urlId, onOpenStream, onBack }: { urlId: str
         </div>
       )}
 
-      {/* Backdrop Area */}
       <div className="relative w-full h-[40vh] sm:h-[50vh]">
         <button 
           onClick={onBack}
@@ -77,7 +108,6 @@ export default function DetailView({ urlId, onOpenStream, onBack }: { urlId: str
       </div>
 
       <div className="px-4 sm:px-8 max-w-5xl mx-auto w-full">
-        {/* Action Buttons */}
         <div className="flex gap-4 mt-4 mb-6">
           <button 
             onClick={() => firstEpisode && onOpenStream(firstEpisode.url)}
@@ -86,13 +116,15 @@ export default function DetailView({ urlId, onOpenStream, onBack }: { urlId: str
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             Mulai Tonton
           </button>
-          <button className="flex-1 bg-[#1a1a1a] hover:bg-[#222222] text-white font-bold py-3 rounded-full flex justify-center items-center gap-2 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            Subscribe
+          <button 
+            onClick={toggleFavorite}
+            className={`flex-1 font-bold py-3 rounded-full flex justify-center items-center gap-2 transition-colors ${isFavorite ? 'bg-pink-600 hover:bg-pink-700 text-white' : 'bg-[#1a1a1a] hover:bg-[#222222] text-white'}`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            {isFavorite ? 'Disukai' : 'Suka'}
           </button>
         </div>
 
-        {/* Synopsis */}
         <div className="mb-8">
           <h3 className="text-lg font-bold text-white mb-2">Synopsis</h3>
           <p className="text-sm leading-relaxed text-[#999999] whitespace-pre-line">
@@ -105,7 +137,6 @@ export default function DetailView({ urlId, onOpenStream, onBack }: { urlId: str
           </div>
         </div>
 
-        {/* Episodes List */}
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold text-white">Episodes ({detail.chapter?.length || 0})</h3>
