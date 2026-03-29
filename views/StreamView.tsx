@@ -103,6 +103,7 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
           chapter_id: chapterUrlId,
           user_name: user.displayName || "Wibu Anonim",
           user_photo: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'A'}&background=10b981&color=fff`,
+          user_email: user.email || "",
           comment_text: newComment
         }
       });
@@ -477,7 +478,11 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
                 <img src={c.user_photo} alt={c.user_name} className="w-8 h-8 rounded-full object-cover border border-[#222]" />
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-white text-[11px] font-bold">{c.user_name}</span>
+                    <span className="text-white text-[11px] font-bold flex items-center gap-1">
+                      {c.user_name}
+                      {c.role === 'own' && <img src="/assets/icons/centang.png" alt="Verified" className="w-3 h-3 object-contain" onError={(e: any) => e.target.style.display='none'} />}
+                      {c.role === 'admin' && <img src="/assets/icons/centangmr.png" alt="Admin" className="w-3 h-3 object-contain" onError={(e: any) => e.target.style.display='none'} />}
+                    </span>
                     <span className="text-[#666] text-[9px]">
                       {new Date(c.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
                     </span>
