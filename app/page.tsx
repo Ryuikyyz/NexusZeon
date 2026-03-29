@@ -14,10 +14,11 @@ import StreamView from "../views/StreamView";
 import HistoryView from "../views/HistoryView";
 import FavoritesView from "../views/FavoritesView";
 import ProfileView from "../views/ProfileView";
+import ActivityView from "../views/ActivityView";
 import { auth, signInWithGoogleNative } from "../lib/firebase";
 
 export default function ZedxPlayApp() {
-  const [view, setView] = useState<"home" | "search" | "detail" | "stream" | "history" | "favorites" | "profile">("home");
+  const [view, setView] = useState<"home" | "search" | "detail" | "stream" | "activity" | "history" | "favorites" | "profile">("home");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeUrlId, setActiveUrlId] = useState("");
   const [activeChapterId, setActiveChapterId] = useState("");
@@ -102,7 +103,7 @@ export default function ZedxPlayApp() {
         setView("detail");
       } else if (view === "detail" || view === "search") {
         setView("home");
-      } else if (view === "home" || view === "history" || view === "favorites" || view === "profile") {
+      } else if (view === "home" || view === "activity" || view === "history" || view === "favorites" || view === "profile") {
         if (view !== "home") {
           setView("home");
           return;
@@ -224,12 +225,13 @@ export default function ZedxPlayApp() {
         {view === "search" && <SearchView query={searchQuery} onOpenDetail={goDetail} />}
         {view === "detail" && <DetailView urlId={activeUrlId} onOpenStream={goStream} onBack={goHome} />}
         {view === "stream" && <StreamView chapterUrlId={activeChapterId} onBack={() => setView("detail")} />}
+        {view === "activity" && <ActivityView user={user} />}
         {view === "history" && <HistoryView onOpenStream={goStream} />}
         {view === "favorites" && <FavoritesView onOpenDetail={goDetail} />}
         {view === "profile" && <ProfileView user={user} onSignOut={handleSignOut} />}
       </main>
 
-      {(view === "home" || view === "history" || view === "favorites" || view === "profile") && (
+      {(view === "home" || view === "activity" || view === "history" || view === "favorites" || view === "profile") && (
         <BottomNav active={view} onChange={(v) => setView(v as any)} />
       )}
     </div>
