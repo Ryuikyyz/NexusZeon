@@ -39,7 +39,7 @@ export default function ZedxPlayApp() {
         });
         const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
         if (data && data.success) {
-          if (data.version !== "0.1.0") {
+          if (data.version !== "0.1.1") {
             setUpdateLink(data.link);
             setIsUpdateRequired(true);
           }
