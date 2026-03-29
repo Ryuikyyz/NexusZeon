@@ -52,6 +52,20 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
       setStream({ ...data, selectedVideo: mp4Stream }); 
       setErrorMsg(null);
       setLoading(false);
+
+      try {
+        const historyStr = localStorage.getItem("zedx_history");
+        let history = historyStr ? JSON.parse(historyStr) : [];
+        history = history.filter((h: any) => h.chapterUrlId !== chapterUrlId);
+        history.unshift({
+          chapterUrlId,
+          title: data.judul || "Anime Terkini",
+          coverUrl: data.coverUrl || "/assets/placeholder/pc.png",
+          timestamp: new Date().getTime()
+        });
+        localStorage.setItem("zedx_history", JSON.stringify(history));
+      } catch (e) {}
+
     } catch (error) {
       const delayBase = Math.pow(2, retryAttempt + 1);
       setErrorMsg(`Gagal memuat video. Auto-retry dalam ${delayBase} detik...`);
