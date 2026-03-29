@@ -13,6 +13,7 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
   
   const [showBorderModal, setShowBorderModal] = useState(false);
   const [showRedeemModal, setShowRedeemModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [redeemCode, setRedeemCode] = useState("");
   const [redeemMsg, setRedeemMsg] = useState("");
 
@@ -122,13 +123,23 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
       </div>
 
       <div className="w-full max-w-sm mt-8 flex flex-col gap-3">
-        <button 
-          onClick={() => setShowRedeemModal(true)}
-          className="bg-[#121212] hover:bg-[#1a1a1a] border border-[#333] text-white font-bold py-3 px-8 rounded-full transition-colors w-full flex items-center justify-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          Redeem Code
-        </button>
+        <div className="flex gap-3 w-full">
+          <button 
+            onClick={() => setShowRedeemModal(true)}
+            className="flex-1 bg-[#121212] hover:bg-[#1a1a1a] border border-[#333] text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span className="text-xs">Redeem</span>
+          </button>
+          <button 
+            onClick={() => setShowContactModal(true)}
+            className="flex-1 bg-[#121212] hover:bg-[#1a1a1a] border border-[#333] text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            <span className="text-xs">Kontak</span>
+          </button>
+        </div>
+
         <button 
           onClick={() => window.open("https://saweria.co/DemonzGhizer", "_system")}
           className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold py-3 px-8 rounded-full transition-colors w-full flex items-center justify-center gap-2 shadow-lg shadow-[#f59e0b]/20"
@@ -144,21 +155,63 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
         </button>
       </div>
 
-      {showRedeemModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#121212] border border-[#333] rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="text-white font-bold text-lg mb-4">Redeem Code</h3>
-            <input 
-              type="text" 
-              value={redeemCode}
-              onChange={(e) => setRedeemCode(e.target.value)}
-              placeholder="Masukkan kode..." 
-              className="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#10b981] text-white p-3 rounded-lg mb-2 outline-none"
-            />
-            {redeemMsg && <p className="text-[#10b981] text-xs mb-4">{redeemMsg}</p>}
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => { setShowRedeemModal(false); setRedeemMsg(""); setRedeemCode(""); }} className="flex-1 bg-[#1a1a1a] text-white font-bold py-2 rounded-lg">Batal</button>
-              <button onClick={handleRedeem} className="flex-1 bg-[#10b981] text-white font-bold py-2 rounded-lg">Klaim</button>
+      {showContactModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pb-safe">
+          <div className="bg-[#121212] border-t sm:border border-[#333] rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-white font-bold text-lg">Hubungi Admin</h3>
+              <button onClick={() => setShowContactModal(false)} className="text-[#666] hover:text-white">✕</button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button onClick={() => window.open("https://t.me/KyysStoreID", "_system")} className="flex items-center gap-4 bg-[#1a1a1a] p-3 rounded-xl border border-[#333] hover:border-[#10b981] transition-colors w-full text-left group">
+                <div className="w-10 h-10 bg-[#222] rounded-full flex items-center justify-center group-hover:bg-[#10b981]/20 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">Telegram</h4>
+                  <p className="text-[#888] text-xs mt-0.5">t.me/KyysStoreID</p>
+                </div>
+              </button>
+
+              <button onClick={() => window.open("https://whatsapp.com/channel/0029VbBQ5fFJJhzgXbCy9Q05", "_system")} className="flex items-center gap-4 bg-[#1a1a1a] p-3 rounded-xl border border-[#333] hover:border-[#10b981] transition-colors w-full text-left group">
+                <div className="w-10 h-10 bg-[#222] rounded-full flex items-center justify-center group-hover:bg-[#10b981]/20 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">Saluran WhatsApp</h4>
+                  <p className="text-[#888] text-xs mt-0.5">Info & Update Terbaru</p>
+                </div>
+              </button>
+
+              <button onClick={() => window.open("https://wa.me/6282116501477?text=min+mau+lapor+bug", "_system")} className="flex items-center gap-4 bg-[#1a1a1a] p-3 rounded-xl border border-[#333] hover:border-[#10b981] transition-colors w-full text-left group">
+                <div className="w-10 h-10 bg-[#222] rounded-full flex items-center justify-center group-hover:bg-[#10b981]/20 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">Lapor Bug</h4>
+                  <p className="text-[#888] text-xs mt-0.5">Hubungi Admin (+62821...)</p>
+                </div>
+              </button>
+
+              <button onClick={() => window.open("https://discord.gg/nWfcJJKUm", "_system")} className="flex items-center gap-4 bg-[#1a1a1a] p-3 rounded-xl border border-[#333] hover:border-[#10b981] transition-colors w-full text-left group">
+                <div className="w-10 h-10 bg-[#222] rounded-full flex items-center justify-center group-hover:bg-[#10b981]/20 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11h.01"></path><path d="M15 11h.01"></path><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><path d="M7.74 15.54A7 7 0 0 1 12 17a7 7 0 0 1 4.26-1.46"></path></svg>
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">Discord</h4>
+                  <p className="text-[#888] text-xs mt-0.5">Gabung Komunitas ZedxPlay</p>
+                </div>
+              </button>
+
+              <button onClick={() => window.open("mailto:zedxbusiness@outlook.com", "_system")} className="flex items-center gap-4 bg-[#1a1a1a] p-3 rounded-xl border border-[#333] hover:border-[#10b981] transition-colors w-full text-left group">
+                <div className="w-10 h-10 bg-[#222] rounded-full flex items-center justify-center group-hover:bg-[#10b981]/20 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">Email Business</h4>
+                  <p className="text-[#888] text-xs mt-0.5">zedxbusiness@outlook.com</p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
