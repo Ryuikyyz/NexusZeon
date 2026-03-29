@@ -21,6 +21,10 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
     fetchBadges();
   }, [user]);
 
+  const openSaweria = () => {
+    window.open("https://saweria.co/DemonzGhizer", "_system");
+  };
+
   return (
     <div className="p-4 w-full h-full pb-20 flex flex-col items-center pt-10">
       <div className="relative mb-4">
@@ -53,12 +57,21 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
         </div>
       </div>
 
-      <button 
-        onClick={onSignOut}
-        className="mt-10 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 font-bold py-3 px-8 rounded-full transition-colors w-full max-w-sm"
-      >
-        Keluar Akun
-      </button>
+      <div className="w-full max-w-sm mt-8 flex flex-col gap-3">
+        <button 
+          onClick={openSaweria}
+          className="bg-[#f59e0b] hover:bg-[#d97706] text-white font-bold py-3 px-8 rounded-full transition-colors w-full flex items-center justify-center gap-2 shadow-lg shadow-[#f59e0b]/20"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          Dukung via Saweria
+        </button>
+        <button 
+          onClick={onSignOut}
+          className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 font-bold py-3 px-8 rounded-full transition-colors w-full"
+        >
+          Keluar Akun
+        </button>
+      </div>
     </div>
   );
 }
