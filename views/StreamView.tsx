@@ -78,7 +78,10 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
   const fetchComments = async () => {
     try {
       const res = await CapacitorHttp.get({
-        url: `http://165.22.253.30:8010/api/comments/${chapterUrlId}`
+        url: `https://api.zedxnexus.dpdns.org/api/comments/${chapterUrlId}`,
+        headers: {
+          'x-api-key': 'zedx_rahasia_bismillah_123'
+        }
       });
       const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
       if (data && data.success) {
@@ -97,8 +100,11 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
     setIsSubmitting(true);
     try {
       const res = await CapacitorHttp.post({
-        url: `http://165.22.253.30:8010/api/comments`,
-        headers: { 'Content-Type': 'application/json' },
+        url: `https://api.zedxnexus.dpdns.org/api/comments`,
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': 'zedx_rahasia_bismillah_123'
+        },
         data: {
           chapter_id: chapterUrlId,
           user_name: user.displayName || "Wibu Anonim",
