@@ -25,6 +25,8 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(null);
+  const [likeCountState, setLikeCountState] = useState(0);
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -50,6 +52,7 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
       const data = await api.getStream(chapterUrlId, resolution);
       const mp4Stream = data?.stream?.find((s: any) => s.link.endsWith(".mp4")) || data?.stream?.[0];
       setStream({ ...data, selectedVideo: mp4Stream }); 
+      setLikeCountState(data.likeCount || 0);
       setErrorMsg(null);
       setLoading(false);
 
@@ -75,6 +78,20 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
     }
   };
 
+  const fetchLikeStatus = async () => {
+    if (!user?.email) return;
+    try {
+      const res = await CapacitorHttp.get({
+        url: `https://api.zedxnexus.dpdns.org/api/like-status/${chapterUrlId}/${user.email}`,
+        headers: { 'x-api-key': 'zedx_rahasia_bismillah_123' }
+      });
+      const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+      if (data && data.success) {
+        setUserVote(data.vote);
+      }
+    } catch (error) {}
+  };
+
   const fetchComments = async () => {
     try {
       const res = await CapacitorHttp.get({
@@ -93,7 +110,8 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
   useEffect(() => {
     fetchStreamData();
     fetchComments();
-  }, [chapterUrlId, resolution]);
+    fetchLikeStatus();
+  }, [chapterUrlId, resolution, user]);
 
   const handlePostComment = async () => {
     if (!newComment.trim() || !user) return;
@@ -127,13 +145,51 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
     }
   };
 
+  const handleLikeAction = async (action: 'like' | 'dislike') => {
+    if (!user) { alert("Login dulu buat vote cuy!"); return; }
+    if (loading || !stream) return;
+
+    const oldVote = userVote;
+    const oldLikeCount = likeCountState;
+    
+    let newVote = action;
+    let newLikeCount = oldLikeCount;
+
+    if (action === 'like') {
+        if (oldVote === 'like') { newVote = null; newLikeCount -= 1; } 
+        else if (oldVote === 'dislike') { newVote = 'like'; newLikeCount += 1; } 
+        else { newVote = 'like'; newLikeCount += 1; }
+    } else {
+        if (oldVote === 'dislike') { newVote = null; } 
+        else if (oldVote === 'like') { newVote = 'dislike'; newLikeCount -= 1; } 
+        else { newVote = 'dislike'; }
+    }
+
+    setUserVote(newVote);
+    setLikeCountState(newLikeCount);
+
+    try {
+      const res = await CapacitorHttp.post({
+        url: `https://api.zedxnexus.dpdns.org/api/like-action`,
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'zedx_rahasia_bismillah_123' },
+        data: { chapter_id: chapterUrlId, user_email: user.email, action: newVote || 'none' }
+      });
+      const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+      if (!data || !data.success) {
+        setUserVote(oldVote);
+        setLikeCountState(oldLikeCount);
+        alert("Gagal ngasih vote!");
+      }
+    } catch (error: any) {
+      setUserVote(oldVote);
+      setLikeCountState(oldLikeCount);
+    }
+  };
+
   const togglePlay = () => {
     if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
+      if (isPlaying) videoRef.current.pause();
+      else videoRef.current.play();
       setIsPlaying(!isPlaying);
     }
   };
@@ -167,42 +223,28 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
       try {
         await playerContainer?.requestFullscreen();
         setIsFullscreen(true);
-        try {
-          await StatusBar.hide();
-          await ScreenOrientation.lock({ orientation: 'landscape' });
-        } catch (err) {}
+        try { await StatusBar.hide(); await ScreenOrientation.lock({ orientation: 'landscape' }); } catch (err) {}
       } catch (err) {}
     } else {
       try {
         await document.exitFullscreen();
         setIsFullscreen(false);
-        try {
-          await StatusBar.show();
-          await ScreenOrientation.lock({ orientation: 'portrait' });
-        } catch (err) {}
+        try { await StatusBar.show(); await ScreenOrientation.lock({ orientation: 'portrait' }); } catch (err) {}
       } catch (err) {}
     }
   };
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
-
     if (isFullscreen) {
       intervalId = setInterval(async () => {
         try {
           const { type } = await ScreenOrientation.getCurrentOrientation();
-          if (type === 'landscape') {
-            await StatusBar.hide();
-          }
+          if (type === 'landscape') await StatusBar.hide();
         } catch (error) {}
       }, 500);
     }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
+    return () => { if (intervalId) clearInterval(intervalId); };
   }, [isFullscreen]);
 
   const formatTime = (time: number) => {
@@ -239,17 +281,16 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
 
   useEffect(() => {
     resetHideTimer();
-    return () => {
-      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    };
+    return () => { if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current); };
   }, [isPlaying]);
 
   const StreamSkeleton = () => (
-    <div className="w-full animate-pulse flex flex-col gap-4">
+    <div className="w-full animate-pulse flex flex-col gap-4 bg-black min-h-screen pb-12">
       <div className="w-full aspect-video bg-[#121212]"></div>
       <div className="px-4 space-y-4">
         <div className="w-32 h-6 bg-[#1a1a1a] rounded"></div>
-        <div className="w-full h-16 bg-[#121212] rounded-md"></div>
+        <div className="w-full h-20 bg-[#121212] rounded-xl border border-[#1a1a1a]"></div>
+        <div className="w-full h-16 bg-[#121212] rounded-xl border border-[#1a1a1a]"></div>
       </div>
     </div>
   );
@@ -269,7 +310,7 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
       )}
 
       {errorMsg && (
-        <div className="bg-[#10b981]/20 border border-[#10b981] text-[#10b981] text-sm text-center py-2 px-4">
+        <div className="bg-[#10b981]/20 border border-[#10b981] text-[#10b981] text-sm text-center py-2 px-4 relative z-50">
           {errorMsg}
         </div>
       )}
@@ -281,7 +322,7 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
       >
         {stream.selectedVideo ? (
           <video 
-            ref={videoRef}
+            ref= {videoRef}
             src={stream.selectedVideo.link} 
             poster="/assets/icons/loading_bg.png" 
             className="w-full h-full object-contain relative z-10 bg-black"
@@ -324,34 +365,34 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
 
             <div className="flex-1 flex items-center justify-center w-full">
               {!isVideoLoading && (
-                <div className="flex items-center justify-center gap-12 sm:gap-20">
-                  <button onClick={() => skipTime(-10)} className="w-10 h-10 sm:w-14 sm:h-14 hover:scale-110 transition-transform focus:outline-none bg-black/30 rounded-full p-2">
+                <div className="flex items-center justify-center gap-12 sm:gap-20 relative z-40">
+                  <button onClick={() => skipTime(-10)} className="w-16 h-16 hover:scale-110 transition-transform focus:outline-none bg-black/30 rounded-full p-2">
                     <img src="/assets/icons/rewind.png" alt="Rewind" className="w-full h-full object-contain" onError={(e: any) => e.target.style.display='none'} />
                   </button>
                   
-                  <button onClick={togglePlay} className="w-14 h-14 sm:w-20 sm:h-20 hover:scale-110 transition-transform focus:outline-none bg-black/30 rounded-full p-3 shadow-lg">
+                  <button onClick={togglePlay} className="w-20 h-20 hover:scale-110 transition-transform focus:outline-none bg-black/30 rounded-full p-3 shadow-lg">
                     <img src={isPlaying ? "/assets/icons/pause.png" : "/assets/icons/play.png"} alt="Play/Pause" className="w-full h-full object-contain ml-0.5" onError={(e: any) => e.target.style.display='none'} />
                   </button>
 
-                  <button onClick={() => skipTime(10)} className="w-10 h-10 sm:w-14 sm:h-14 hover:scale-110 transition-transform focus:outline-none bg-black/30 rounded-full p-2">
+                  <button onClick={() => skipTime(10)} className="w-16 h-16 hover:scale-110 transition-transform focus:outline-none bg-black/30 rounded-full p-2">
                     <img src="/assets/icons/forward.png" alt="Forward" className="w-full h-full object-contain" onError={(e: any) => e.target.style.display='none'} />
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="w-full pb-1 relative">
+            <div className="w-full pb-1 relative z-30">
               <div className="flex justify-between items-center px-4 mb-2">
                 <div className="text-white text-xs font-medium font-mono drop-shadow-md">
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </div>
 
                 <div className="flex items-center gap-4 text-white font-medium text-xs">
-                  <button onClick={(e) => { e.stopPropagation(); setShowResMenu(!showResMenu); }} className="hover:text-[#10b981] drop-shadow-md transition-colors">
+                  <button onClick={(e) => { e.stopPropagation(); setShowResMenu(!showResMenu); }} className="hover:text-[#10b981] drop-shadow-md transition-colors px-1">
                     {resolution}
                   </button>
-                  <span className="drop-shadow-md">1x</span>
-                  <button onClick={toggleFullscreen} className="w-5 h-5 focus:outline-none opacity-90 hover:opacity-100">
+                  <span className="drop-shadow-md px-1">1x</span>
+                  <button onClick={toggleFullscreen} className="w-6 h-6 focus:outline-none opacity-90 hover:opacity-100 flex items-center justify-center p-1">
                     <img src="/assets/icons/maximize.png" alt="Fullscreen" className="w-full h-full object-contain drop-shadow-md" onError={(e: any) => e.target.style.display='none'} />
                   </button>
                 </div>
@@ -365,32 +406,21 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
                   value={currentTime} 
                   onChange={handleSeek}
                   className="w-full h-1 bg-white/30 appearance-none outline-none cursor-pointer transition-all hover:h-1.5"
-                  style={{
-                    background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.3) ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.3) 100%)`
-                  }}
+                  style={{ background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.3) ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.3) 100%)` }}
                 />
               </div>
             </div>
             
             {showResMenu && (
-              <div className="absolute bottom-14 right-4 bg-[#1a1a1a]/95 backdrop-blur-md border border-[#333] rounded-md p-2 flex flex-col min-w-[150px] shadow-2xl z-40" onClick={(e) => e.stopPropagation()}>
-                <div className="text-[10px] text-[#888] font-bold uppercase mb-2 px-2">Pilihan Kualitas Video</div>
+              <div className="absolute bottom-16 right-4 bg-[#1a1a1a]/95 backdrop-blur-md border border-[#333] rounded-md p-2 flex flex-col min-w-[150px] shadow-2xl z-50" onClick={(e) => e.stopPropagation()}>
+                <div className="text-[10px] text-[#888] font-bold uppercase mb-2 px-2 pt-1">Pilihan Kualitas Video</div>
                 {stream.reso?.map((r: string) => (
                   <button
                     key={r}
-                    onClick={() => {
-                      setResolution(r);
-                      setShowResMenu(false);
-                      setIsPlaying(false); 
-                    }}
-                    className={`px-3 py-2 text-xs font-medium rounded text-left transition-colors flex items-center justify-between ${
-                      resolution === r 
-                        ? "text-[#10b981] bg-[#222]" 
-                        : "text-[#ccc] hover:bg-[#333]"
-                    }`}
+                    onClick={() => { setResolution(r); setShowResMenu(false); setIsPlaying(false); }}
+                    className={`px-3 py-2 text-xs font-medium rounded text-left transition-colors flex items-center justify-between gap-2 ${ resolution === r ? "text-[#10b981] bg-[#222]" : "text-[#ccc] hover:bg-[#333]" }`}
                   >
-                    {r}
-                    {resolution === r && <span>✓</span>}
+                    {r} {resolution === r && <span>✓</span>}
                   </button>
                 ))}
               </div>
@@ -402,75 +432,71 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
 
       <div className="flex flex-col w-full">
         
-        <div className="flex items-center gap-3 mt-4 px-4">
-          <img 
-             src={stream.coverUrl || "/assets/placeholder/pc.png"} 
-             alt="Avatar" 
-             className="w-10 h-10 rounded-full object-cover border border-[#333]" 
-             onError={(e: any) => { e.target.onerror = null; e.target.src = "/assets/placeholder/pc.png"; }}
-          />
-          <div>
-            <h2 className="text-white font-medium text-sm leading-tight">{stream.judul || "Anime Terkini"}</h2>
-            <p className="text-[#888888] text-[11px] mt-0.5">
-              Episode Terkini • {stream.likeCount || "0"} Likes • Baru saja
-            </p>
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-3">
+            <img src={stream.coverUrl || "/assets/placeholder/pc.png"} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-[#1a1a1a]" onError={(e: any) => { e.target.onerror = null; e.target.src = "/assets/placeholder/pc.png"; }} />
+            <div>
+              <h2 className="text-white font-medium text-base leading-tight">{stream.judul || "Anime Terkini"}</h2>
+              <p className="text-[#888] text-xs mt-0.5">Episode Terkini • {stream.likeCount || 0} Likes</p>
+            </div>
+          </div>
+
+          <div className="bg-[#121212] rounded-xl border border-[#1a1a1a] p-1.5 flex flex-col gap-1.5">
+            <div className="flex gap-1.5">
+              <div className="flex items-center bg-[#1a1a1a] border border-[#222] rounded-full text-white text-[12px] font-bold h-11 transition-colors px-1 shrink-0 overflow-hidden">
+                <button onClick={() => handleLikeAction('like')} className={`flex items-center gap-2.5 h-full px-4 rounded-full transition-colors ${userVote === 'like' ? 'text-[#10b981] bg-[#10b981]/10' : 'hover:bg-[#222]'}`}>
+                  <img src={userVote === 'like' ? "/assets/icons/likeact.png" : "/assets/icons/like.png"} alt="Like" className="w-5 h-5 object-contain" onError={(e: any) => e.target.style.display='none'} />
+                  <span className="min-w-[1ch]">{likeCountState}</span>
+                </button>
+                <div className="h-6 w-px bg-[#222]"></div>
+                <button onClick={() => handleLikeAction('dislike')} className={`flex items-center h-full px-4 rounded-full transition-colors ${userVote === 'dislike' ? 'text-white bg-[#ef4444]/10' : 'hover:bg-[#222]'}`}>
+                  <img src={userVote === 'dislike' ? "/assets/icons/dislikeact.png" : "/assets/icons/dislike.png"} alt="Dislike" className="w-5 h-5 object-contain" onError={(e: any) => e.target.style.display='none'} />
+                </button>
+              </div>
+              <button onClick={() => setShowResMenu(!showResMenu)} className="flex items-center gap-2.5 bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[12px] font-bold h-11 flex-1 rounded-full px-5 border border-[#222] transition-colors whitespace-nowrap overflow-hidden">
+                ▶ {resolution} Quality
+              </button>
+              <button className="flex items-center gap-2.5 bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[12px] font-bold h-11 px-5 rounded-full border border-[#222] transition-colors whitespace-nowrap overflow-hidden">
+                ⬇ Download
+              </button>
+            </div>
+            <div className="flex gap-1.5">
+              <button className="flex items-center gap-2.5 justify-center bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[12px] font-bold h-11 flex-1 rounded-full border border-[#222] transition-colors whitespace-nowrap overflow-hidden">
+                ➦ Share
+              </button>
+              <button className="flex items-center gap-2.5 justify-center bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[12px] font-bold h-11 flex-1 rounded-full border border-[#222] transition-colors whitespace-nowrap overflow-hidden">
+                ⚑ Report
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-2 mt-4 px-4 overflow-x-auto no-scrollbar pb-1">
-           <button className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[11px] font-medium py-2 px-4 rounded-full border border-transparent transition-colors whitespace-nowrap">
-              👍 {stream.likeCount || "343"}
-           </button>
-           <button className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[11px] font-medium py-2 px-4 rounded-full border border-transparent transition-colors whitespace-nowrap">
-              👎 0
-           </button>
-           <button onClick={() => setShowResMenu(!showResMenu)} className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[11px] font-medium py-2 px-4 rounded-full border border-transparent transition-colors whitespace-nowrap">
-              ▶ {resolution} Quality
-           </button>
-           <button className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[11px] font-medium py-2 px-4 rounded-full border border-transparent transition-colors whitespace-nowrap">
-              ⬇ Download
-           </button>
-        </div>
-
-        <div className="flex gap-2 mt-2 px-4 overflow-x-auto no-scrollbar pb-4 border-b border-[#1a1a1a]">
-           <button className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[11px] font-medium py-2 px-4 rounded-full border border-transparent transition-colors whitespace-nowrap">
-              ➦ Share
-           </button>
-           <button className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#222] text-[#ccc] text-[11px] font-medium py-2 px-4 rounded-full border border-transparent transition-colors whitespace-nowrap">
-              ⚑ Report
-           </button>
-        </div>
-
-        <div className="px-4 mt-4 mb-2">
-          <p className="text-[#888888] text-[11px] leading-relaxed line-clamp-3">
+        <div className="px-4 mt-1 mb-2">
+          <p className="text-[#888] text-[12px] leading-relaxed line-clamp-3">
             {stream.sinopsis || "Saksikan petualangan seru ini hanya di ZedxPlay. Jangan lupa untuk mengikuti aturan komunitas kami dan nikmati kualitas terbaik tanpa batas."}
-            <span className="text-[#3b82f6] cursor-pointer ml-1">Selengkapnya ▼</span>
+            <span className="text-[#3b82f6] cursor-pointer ml-1.5">Selengkapnya ▼</span>
           </p>
         </div>
 
         <div className="px-4 mt-6 mb-8 pt-6 border-t border-[#1a1a1a]">
-          <h3 className="text-white text-sm font-medium mb-4">{comments.length} Comments</h3>
+          <h3 className="text-white text-base font-bold mb-5">{comments.length} Comments</h3>
           
-          <div className="flex gap-4 mb-8">
-            <img 
-              src={user?.photoURL || "/assets/placeholder/pc.png"} 
-              alt="User" 
-              className="w-10 h-10 rounded-full object-cover border border-[#333]"
-            />
-            <div className="flex-1 flex flex-col gap-2">
+          <div className="flex gap-4 mb-9">
+            <img src={user?.photoURL || "/assets/placeholder/pc.png"} alt="User" className="w-11 h-11 rounded-full object-cover border border-[#1a1a1a]" />
+            <div className="flex-1 flex flex-col gap-2.5">
               <input 
                 type="text" 
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder={user ? "Tambahkan komentar..." : "Login dulu buat komentar cuy..."} 
-                className="w-full bg-[#0a0a0a] border-b border-[#333] focus:border-[#10b981] text-xs text-white px-1 py-2 outline-none transition-colors"
+                className="w-full bg-black border-b border-[#222] focus:border-[#10b981] text-sm text-white px-1 py-2.5 outline-none transition-colors"
                 disabled={isSubmitting || !user}
               />
               <div className="flex justify-end">
                 <button 
                   onClick={handlePostComment}
                   disabled={isSubmitting || !newComment.trim() || !user}
-                  className="bg-[#1a1a1a] hover:bg-[#222] disabled:opacity-50 text-white border border-[#333] text-[11px] font-bold py-1.5 px-4 rounded-full transition-colors mt-1"
+                  className="bg-[#121212] hover:bg-[#1a1a1a] disabled:opacity-50 text-white border border-[#222] text-[12px] font-bold py-2 px-6 rounded-full transition-colors mt-1"
                 >
                   {isSubmitting ? 'Mengirim...' : 'Kirim'}
                 </button>
@@ -478,34 +504,34 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
             </div>
           </div>
 
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5">
             {comments.map((c: any) => (
-              <div key={c.id} className="flex gap-4">
-                <div className="relative w-10 h-10 flex-shrink-0 mt-1">
-                  <img src={c.user_photo} alt={c.user_name} className="w-10 h-10 rounded-full object-cover border border-[#222]" />
+              <div key={c.id} className="bg-[#121212] border border-[#1a1a1a] rounded-xl p-4 flex gap-4 transition-colors hover:border-[#222]">
+                <div className="relative w-11 h-11 flex-shrink-0 mt-0.5">
+                  <img src={c.user_photo} alt={c.user_name} className="w-11 h-11 rounded-full object-cover border border-[#1a1a1a]" />
                   {c.active_border && (
-                    <img src={`/assets/icons/${c.active_border}.png`} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] max-w-none pointer-events-none object-contain z-10" onError={(e: any) => e.target.style.display='none'} />
+                    <img src={`/assets/icons/${c.active_border}.png`} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[138%] h-[138%] max-w-none pointer-events-none object-contain z-10" onError={(e: any) => e.target.style.display='none'} />
                   )}
                 </div>
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-white text-[12px] font-bold flex items-center gap-1">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-white text-[13px] font-bold flex items-center gap-1.5 flex-wrap">
                       {c.user_name}
                       {c.role === 'own' && <img src="/assets/icons/centang.png" alt="Verified" className="w-3.5 h-3.5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
                       {c.role === 'admin' && <img src="/assets/icons/centangmr.png" alt="Admin" className="w-3.5 h-3.5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
-                      {c.active_title && <img src={`/assets/title/${c.active_title}.png`} className="h-3 sm:h-4 ml-1 object-contain" onError={(e: any) => e.target.style.display='none'} />}
+                      {c.active_title && <img src={`/assets/title/${c.active_title}.png`} className="h-4 sm:h-5 ml-1 object-contain" onError={(e: any) => e.target.style.display='none'} />}
                     </span>
-                    <span className="text-[#666] text-[10px]">
+                    <span className="text-[#666] text-[11px] whitespace-nowrap">
                       {new Date(c.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
                     </span>
                   </div>
-                  <p className="text-[#ccc] text-[12px] mt-1 leading-relaxed">{c.comment_text}</p>
+                  <p className="text-[#ccc] text-sm mt-1.5 leading-relaxed break-words">{c.comment_text}</p>
                 </div>
               </div>
             ))}
             
             {comments.length === 0 && (
-              <div className="text-[#666] text-xs text-center py-6 bg-[#0a0a0a] rounded border border-[#1a1a1a]">
+              <div className="text-[#666] text-sm text-center py-9 bg-[#121212] rounded-xl border border-[#1a1a1a] transition-colors hover:border-[#222]">
                 Belum ada komentar. Jadilah yang pertama!
               </div>
             )}
