@@ -130,7 +130,7 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
           {role === 'admin' && <img src="/assets/icons/centangmr.png" alt="Admin" className="w-5 h-5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
         </h2>
         {activeTitle && (
-          <img src={`/assets/title/${activeTitle}.png`} className="w-32 sm:w-40 mt-1 object-contain drop-shadow-md" onError={(e: any) => e.target.style.display='none'} />
+          <img src={`/assets/title/${activeTitle}.png`} className="w-48 sm:w-56 mt-2 object-contain drop-shadow-md" onError={(e: any) => e.target.style.display='none'} />
         )}
         <p className="text-[#888] text-sm mt-1">{user?.email}</p>
       </div>
@@ -336,7 +336,7 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
                   >
                     <div className="flex items-center gap-3">
                       {t.id !== 'none' ? (
-                        <img src={`/assets/title/${t.id}.png`} className="w-24 sm:w-28 object-contain" onError={(e: any) => e.target.style.display='none'} />
+                        <img src={`/assets/title/${t.id}.png`} className="w-40 sm:w-48 object-contain" onError={(e: any) => e.target.style.display='none'} />
                       ) : (
                         <span className="text-white text-sm font-bold ml-2">{t.name}</span>
                       )}
