@@ -9,7 +9,10 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
       if (!user?.email) return;
       try {
         const res = await CapacitorHttp.get({
-          url: `http://165.22.253.30:8010/api/badges`
+          url: `https://api.zedxnexus.dpdns.org/api/badges`,
+          headers: {
+            'x-api-key': 'zedx_rahasia_bismillah_123'
+          }
         });
         const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
         if (data && data.success) {
