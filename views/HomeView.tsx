@@ -2,11 +2,47 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import AnimeCard from "../components/AnimeCard";
 
-// FUNGSI PLACEHOLDER SAKTI
 const handleImageError = (e: any) => {
-  e.target.onerror = null; // Biar gak looping
+  e.target.onerror = null;
   e.target.src = "/assets/placeholder/pc.png";
 };
+
+const HomeSkeleton = () => (
+  <div className="animate-pulse space-y-8">
+    <div className="w-full aspect-video bg-[#121212] rounded-b-3xl"></div>
+    <div className="space-y-4 px-4 sm:px-8">
+      <div className="w-40 h-6 bg-[#1a1a1a] rounded"></div>
+      <div className="grid grid-cols-3 gap-4 sm:gap-5 px-1 sm:px-2">
+        {[1,2,3,4,5,6].map(i => <div key={i} className="aspect-[3/4] bg-[#121212] rounded-md"></div>)}
+      </div>
+    </div>
+  </div>
+);
+
+const Section = ({ title, data, isScroll = false, onOpenDetail }: { title: string, data: any[], isScroll?: boolean, onOpenDetail: (urlId: string) => void }) => (
+  <section className="mb-12 px-4 sm:px-8">
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-xl font-bold text-white">{title}</h2>
+      <span className="text-sm font-medium text-[#10b981] cursor-pointer hover:text-white transition-colors">Lainnya</span>
+    </div>
+    
+    {isScroll ? (
+      <div className="flex overflow-x-auto gap-3 pb-4 custom-scrollbar snap-x">
+        {(data || []).map((anime: any) => (
+          <div key={anime.id} className="w-28 sm:w-32 flex-shrink-0 snap-start">
+            <AnimeCard anime={anime} onClick={() => onOpenDetail(anime.url)} />
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="grid grid-cols-3 gap-4 sm:gap-5 px-1 sm:px-2">
+        {(data || []).map((anime: any) => (
+          <AnimeCard key={anime.id} anime={anime} onClick={() => onOpenDetail(anime.url)} />
+        ))}
+      </div>
+    )}
+  </section>
+);
 
 export default function HomeView({ onOpenDetail }: { onOpenDetail: (urlId: string) => void }) {
   const [latest, setLatest] = useState<any[]>([]);
@@ -24,9 +60,9 @@ export default function HomeView({ onOpenDetail }: { onOpenDetail: (urlId: strin
         api.getRecommended(),
         api.getMovies()
       ]);
-      setLatest(dataLatest);
-      setRecommended(dataRec);
-      setMovies(dataMovie);
+      setLatest(dataLatest || []);
+      setRecommended(dataRec || []);
+      setMovies(dataMovie || []);
       
       if (dataRec && dataRec.length > 0) {
         const randomIndex = Math.floor(Math.random() * dataRec.length);
@@ -35,7 +71,7 @@ export default function HomeView({ onOpenDetail }: { onOpenDetail: (urlId: strin
       setErrorMsg(null);
       setLoading(false);
     } catch (error) {
-      const delayBase = Math.pow(2, retryAttempt + 1); // 2, 4, 8...
+      const delayBase = Math.pow(2, retryAttempt + 1);
       setErrorMsg(`Koneksi lambat. Auto-retry dalam ${delayBase} detik...`);
       setTimeout(() => {
         loadData(retryAttempt + 1);
@@ -47,44 +83,7 @@ export default function HomeView({ onOpenDetail }: { onOpenDetail: (urlId: strin
     loadData();
   }, []);
 
-  const HomeSkeleton = () => (
-    <div className="animate-pulse space-y-8">
-      <div className="w-full aspect-video bg-[#121212] rounded-b-3xl"></div>
-      <div className="space-y-4 px-4 sm:px-8">
-        <div className="w-40 h-6 bg-[#1a1a1a] rounded"></div>
-        <div className="grid grid-cols-3 gap-4 sm:gap-5 px-1 sm:px-2">
-          {[1,2,3,4,5,6].map(i => <div key={i} className="aspect-[3/4] bg-[#121212] rounded-md"></div>)}
-        </div>
-      </div>
-    </div>
-  );
-
   if (loading) return <HomeSkeleton />;
-
-  const Section = ({ title, data, isScroll = false }: { title: string, data: any[], isScroll?: boolean }) => (
-    <section className="mb-12 px-4 sm:px-8">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-white">{title}</h2>
-        <span className="text-sm font-medium text-[#10b981] cursor-pointer hover:text-white transition-colors">Lainnya</span>
-      </div>
-      
-      {isScroll ? (
-        <div className="flex overflow-x-auto gap-3 pb-4 custom-scrollbar snap-x">
-          {data.map((anime: any) => (
-            <div key={anime.id} className="w-28 sm:w-32 flex-shrink-0 snap-start">
-              <AnimeCard anime={anime} onClick={() => onOpenDetail(anime.url)} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-4 sm:gap-5 px-1 sm:px-2">
-          {data.map((anime: any) => (
-            <AnimeCard key={anime.id} anime={anime} onClick={() => onOpenDetail(anime.url)} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
 
   return (
     <div className="pb-8">
@@ -94,7 +93,6 @@ export default function HomeView({ onOpenDetail }: { onOpenDetail: (urlId: strin
         </div>
       )}
 
-      {/* Hero Banner Area */}
       {heroAnime && (
         <div className="relative w-full aspect-video max-h-[500px] mb-8 cursor-pointer group" onClick={() => onOpenDetail(heroAnime.url)}>
           <div className="absolute inset-0 bg-black">
@@ -128,9 +126,9 @@ export default function HomeView({ onOpenDetail }: { onOpenDetail: (urlId: strin
       )}
 
       <div className="max-w-7xl mx-auto">
-        <Section title="Latest Updates" data={latest} />
-        <Section title="Recommended" data={recommended} isScroll={true} />
-        <Section title="Movies" data={movies} isScroll={true} />
+        <Section title="Latest Updates" data={latest} onOpenDetail={onOpenDetail} />
+        <Section title="Recommended" data={recommended} isScroll={true} onOpenDetail={onOpenDetail} />
+        <Section title="Movies" data={movies} isScroll={true} onOpenDetail={onOpenDetail} />
       </div>
     </div>
   );
