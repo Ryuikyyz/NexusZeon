@@ -117,19 +117,23 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
         
         {role === 'own' && <img src="/assets/icons/centang.png" className="absolute bottom-0 right-0 w-7 h-7 bg-[#121212] rounded-full p-1 border border-[#333] z-20" onError={(e: any) => e.target.style.display='none'} />}
         {role === 'admin' && <img src="/assets/icons/centangmr.png" className="absolute bottom-0 right-0 w-7 h-7 bg-[#121212] rounded-full p-1 border border-[#333] z-20" onError={(e: any) => e.target.style.display='none'} />}
+        
+        <button onClick={() => setShowBorderModal(true)} className="absolute bottom-0 left-0 bg-[#121212] p-1.5 rounded-full border border-[#333] hover:bg-[#222] transition-colors z-20">
+          <img src="/assets/icons/settings.png" className="w-4 h-4" onError={(e: any) => e.target.style.display='none'} />
+        </button>
       </div>
       
-      <h2 className="text-2xl font-bold text-white flex flex-col items-center justify-center gap-1">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col items-center justify-center gap-1 mb-8 mt-2">
+        <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
           {user?.displayName || "Wibu User"}
           {role === 'own' && <img src="/assets/icons/centang.png" alt="Verified" className="w-5 h-5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
           {role === 'admin' && <img src="/assets/icons/centangmr.png" alt="Admin" className="w-5 h-5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
-        </div>
+        </h2>
         {activeTitle && (
-          <img src={`/assets/title/${activeTitle}.png`} className="h-6 mt-1 object-contain" onError={(e: any) => e.target.style.display='none'} />
+          <img src={`/assets/title/${activeTitle}.png`} className="w-32 sm:w-40 mt-1 object-contain drop-shadow-md" onError={(e: any) => e.target.style.display='none'} />
         )}
-      </h2>
-      <p className="text-[#888] text-sm mt-1 mb-8">{user?.email}</p>
+        <p className="text-[#888] text-sm mt-1">{user?.email}</p>
+      </div>
 
       <div className="w-full max-w-sm bg-[#121212] border border-[#1a1a1a] rounded-xl p-4 flex flex-col gap-4">
         <div className="flex justify-between items-center border-b border-[#1a1a1a] pb-3">
@@ -253,6 +257,26 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
         </div>
       )}
 
+      {showRedeemModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#121212] border border-[#333] rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="text-white font-bold text-lg mb-4">Redeem Code</h3>
+            <input 
+              type="text" 
+              value={redeemCode}
+              onChange={(e) => setRedeemCode(e.target.value)}
+              placeholder="Masukkan kode..." 
+              className="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#10b981] text-white p-3 rounded-lg mb-2 outline-none"
+            />
+            {redeemMsg && <p className="text-[#10b981] text-xs mb-4">{redeemMsg}</p>}
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => { setShowRedeemModal(false); setRedeemMsg(""); setRedeemCode(""); }} className="flex-1 bg-[#1a1a1a] text-white font-bold py-2 rounded-lg">Batal</button>
+              <button onClick={handleRedeem} className="flex-1 bg-[#10b981] text-white font-bold py-2 rounded-lg">Klaim</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showBorderModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pb-safe">
           <div className="bg-[#121212] border-t sm:border border-[#333] rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-md">
@@ -312,7 +336,7 @@ export default function ProfileView({ user, onSignOut }: { user: any, onSignOut:
                   >
                     <div className="flex items-center gap-3">
                       {t.id !== 'none' ? (
-                        <img src={`/assets/title/${t.id}.png`} className="h-8 w-auto object-contain" onError={(e: any) => e.target.style.display='none'} />
+                        <img src={`/assets/title/${t.id}.png`} className="w-24 sm:w-28 object-contain" onError={(e: any) => e.target.style.display='none'} />
                       ) : (
                         <span className="text-white text-sm font-bold ml-2">{t.name}</span>
                       )}
