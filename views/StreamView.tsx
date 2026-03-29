@@ -52,7 +52,6 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
       const data = await api.getStream(chapterUrlId, resolution);
       const mp4Stream = data?.stream?.find((s: any) => s.link.endsWith(".mp4")) || data?.stream?.[0];
       setStream({ ...data, selectedVideo: mp4Stream }); 
-      setLikeCountState(data.likeCount || 0);
       setErrorMsg(null);
       setLoading(false);
 
@@ -79,15 +78,16 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
   };
 
   const fetchLikeStatus = async () => {
-    if (!user?.email) return;
     try {
+      const emailParam = user?.email || 'guest';
       const res = await CapacitorHttp.get({
-        url: `https://api.zedxnexus.dpdns.org/api/like-status/${chapterUrlId}/${user.email}`,
+        url: `https://api.zedxnexus.dpdns.org/api/like-status/${chapterUrlId}/${emailParam}`,
         headers: { 'x-api-key': 'zedx_rahasia_bismillah_123' }
       });
       const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
       if (data && data.success) {
         setUserVote(data.vote);
+        setLikeCountState(data.total_likes || 0);
       }
     } catch (error) {}
   };
@@ -165,7 +165,7 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
         else { newVote = 'dislike'; }
     }
 
-    setUserVote(newVote);
+    setUserVote(newVote as any);
     setLikeCountState(newLikeCount);
 
     try {
@@ -437,7 +437,7 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
             <img src={stream.coverUrl || "/assets/placeholder/pc.png"} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-[#1a1a1a]" onError={(e: any) => { e.target.onerror = null; e.target.src = "/assets/placeholder/pc.png"; }} />
             <div>
               <h2 className="text-white font-medium text-base leading-tight">{stream.judul || "Anime Terkini"}</h2>
-              <p className="text-[#888] text-xs mt-0.5">Episode Terkini • {stream.likeCount || 0} Likes</p>
+              <p className="text-[#888] text-xs mt-0.5">Episode Terkini • {likeCountState} Likes</p>
             </div>
           </div>
 
@@ -514,12 +514,12 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2.5">
+                  <div className="flex items-baseline gap-2.5 flex-wrap">
                     <span className="text-white text-[13px] font-bold flex items-center gap-1.5 flex-wrap">
                       {c.user_name}
                       {c.role === 'own' && <img src="/assets/icons/centang.png" alt="Verified" className="w-3.5 h-3.5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
                       {c.role === 'admin' && <img src="/assets/icons/centangmr.png" alt="Admin" className="w-3.5 h-3.5 object-contain" onError={(e: any) => e.target.style.display='none'} />}
-                      {c.active_title && <img src={`/assets/title/${c.active_title}.png`} className="h-4 sm:h-5 ml-1 object-contain" onError={(e: any) => e.target.style.display='none'} />}
+                      {c.active_title && <img src={`/assets/title/${c.active_title}.png`} className="w-16 sm:w-20 ml-1.5 object-contain translate-y-[2px]" onError={(e: any) => e.target.style.display='none'} />}
                     </span>
                     <span className="text-[#666] text-[11px] whitespace-nowrap">
                       {new Date(c.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
