@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { App as CapacitorApp } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
+import { CapacitorHttp } from '@capacitor/core';
 import Navbar from "../components/Navbar";
 import BottomNav from "../components/BottomNav";
 import HomeView from "../views/HomeView";
@@ -24,8 +25,29 @@ export default function ZedxPlayApp() {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
+  const [isUpdateRequired, setIsUpdateRequired] = useState(false);
+  const [updateLink, setUpdateLink] = useState("");
 
   const isNativePlatform = () => typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNative;
+
+  useEffect(() => {
+    const checkUpdate = async () => {
+      try {
+        const res = await CapacitorHttp.get({
+          url: `https://api.zedxnexus.dpdns.org/api/check-update`
+        });
+        const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+        if (data && data.success) {
+          if (data.version !== "0.1.0") {
+            setUpdateLink(data.link);
+            setIsUpdateRequired(true);
+          }
+        }
+      } catch (e) {}
+    };
+    checkUpdate();
+  }, []);
 
   useEffect(() => {
     if (isNativePlatform()) {
@@ -49,51 +71,33 @@ export default function ZedxPlayApp() {
       if (isNativePlatform()) {
         try {
           let permStatus = await PushNotifications.checkPermissions();
-          
           if (permStatus.receive === 'prompt') {
             permStatus = await PushNotifications.requestPermissions();
           }
-          
-          if (permStatus.receive !== 'granted') {
-            return;
-          }
-
+          if (permStatus.receive !== 'granted') return;
           await PushNotifications.register();
-
-          PushNotifications.addListener('registration', (token) => {
-            console.log(token.value);
-          });
-
-          PushNotifications.addListener('registrationError', (error: any) => {
-            console.log(JSON.stringify(error));
-          });
-
+          PushNotifications.addListener('registration', () => {});
+          PushNotifications.addListener('registrationError', () => {});
           PushNotifications.addListener('pushNotificationReceived', (notification) => {
             alert(notification.title + '\n\n' + notification.body);
           });
-
-          PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-            console.log(JSON.stringify(notification));
-          });
+          PushNotifications.addListener('pushNotificationActionPerformed', () => {});
         } catch (error) {}
       }
     };
-
     initPushNotifications();
   }, []);
 
   useEffect(() => {
     if (!isNativePlatform()) return;
-
     let lastTimeBackPress = 0;
     const timePeriodToExit = 2000;
-
     const backListener = CapacitorApp.addListener('backButton', () => {
+      if (isUpdateRequired) return;
       if (!user) {
          CapacitorApp.exitApp();
          return;
       }
-
       if (view === "stream") {
         setView("detail");
       } else if (view === "detail" || view === "search") {
@@ -111,11 +115,10 @@ export default function ZedxPlayApp() {
         }
       }
     });
-
     return () => {
       backListener.remove();
     };
-  }, [view, user]);
+  }, [view, user, isUpdateRequired]);
 
   const handleForceLogin = async () => {
     try {
@@ -137,21 +140,38 @@ export default function ZedxPlayApp() {
   };
 
   const goHome = () => setView("home");
-  
   const goSearch = (query: string) => {
     setSearchQuery(query);
     setView("search");
   };
-
   const goDetail = (urlId: string) => {
     setActiveUrlId(urlId);
     setView("detail");
   };
-
   const goStream = (chapterUrlId: string) => {
     setActiveChapterId(chapterUrlId);
     setView("stream");
   };
+
+  if (isUpdateRequired) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 selection:bg-[#10b981] selection:text-white relative z-[9999]">
+        <div className="w-20 h-20 mb-6 bg-[#121212] rounded-full flex items-center justify-center border border-[#333]">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 text-center">Update Tersedia!</h1>
+        <p className="text-[#888888] text-center text-sm sm:text-base mb-8 max-w-sm">
+          Versi baru aplikasi telah rilis. Wajib update untuk lanjut menikmati fitur terbaru dan server yang lebih stabil.
+        </p>
+        <button 
+          onClick={() => window.open(updateLink, "_system")}
+          className="bg-[#10b981] hover:bg-[#059669] text-white font-bold py-3 px-10 rounded-full transition-colors w-full max-w-[260px] shadow-lg shadow-[#10b981]/20"
+        >
+          Download Update
+        </button>
+      </div>
+    );
+  }
 
   if (authLoading) {
     return (
