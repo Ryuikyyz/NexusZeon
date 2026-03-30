@@ -50,6 +50,12 @@ export default function StreamView({ chapterUrlId, onBack }: { chapterUrlId: str
     if (retryAttempt === 0) setLoading(true);
     try {
       const data = await api.getStream(chapterUrlId, resolution);
+
+      if (data?.reso && data.reso.length > 0 && !data.reso.includes(resolution)) {
+        setResolution(data.reso[0]);
+        return;
+      }
+
       const mp4Stream = data?.stream?.find((s: any) => s.link.endsWith(".mp4")) || data?.stream?.[0];
       setStream({ ...data, selectedVideo: mp4Stream }); 
       setErrorMsg(null);
