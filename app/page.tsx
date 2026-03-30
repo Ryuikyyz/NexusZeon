@@ -16,10 +16,11 @@ import FavoritesView from "../views/FavoritesView";
 import ProfileView from "../views/ProfileView";
 import ActivityView from "../views/ActivityView";
 import WaifuVoteView from "../views/WaifuVoteView";
+import CommunityChatView from "../views/CommunityChatView";
 import { auth, signInWithGoogleNative } from "../lib/firebase";
 
 export default function ZedxPlayApp() {
-  const [view, setView] = useState<"home" | "search" | "detail" | "stream" | "activity" | "waifu-vote" | "history" | "favorites" | "profile">("home");
+  const [view, setView] = useState<"home" | "search" | "detail" | "stream" | "activity" | "waifu-vote" | "community-chat" | "history" | "favorites" | "profile">("home");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeUrlId, setActiveUrlId] = useState("");
   const [activeChapterId, setActiveChapterId] = useState("");
@@ -102,7 +103,7 @@ export default function ZedxPlayApp() {
       }
       if (view === "stream") {
         setView("detail");
-      } else if (view === "waifu-vote") {
+      } else if (view === "waifu-vote" || view === "community-chat") {
         setView("activity");
       } else if (view === "detail" || view === "search") {
         setView("home");
@@ -219,7 +220,7 @@ export default function ZedxPlayApp() {
 
   return (
     <div className="min-h-screen bg-black text-[#e0e0e0] font-sans selection:bg-[#10b981] selection:text-white no-scrollbar">
-      {view !== 'detail' && view !== 'stream' && view !== 'waifu-vote' && (
+      {view !== 'detail' && view !== 'stream' && view !== 'waifu-vote' && view !== 'community-chat' && (
          <Navbar onGoHome={goHome} onSearch={goSearch} showSearch={view === "home" || view === "search"} />
       )}
       
@@ -228,8 +229,9 @@ export default function ZedxPlayApp() {
         {view === "search" && <SearchView query={searchQuery} onOpenDetail={goDetail} />}
         {view === "detail" && <DetailView urlId={activeUrlId} onOpenStream={goStream} onBack={goHome} />}
         {view === "stream" && <StreamView chapterUrlId={activeChapterId} onBack={() => setView("detail")} />}
-        {view === "activity" && <ActivityView onOpenWaifuVote={() => setView("waifu-vote")} />}
+        {view === "activity" && <ActivityView onOpenWaifuVote={() => setView("waifu-vote")} onOpenCommunityChat={() => setView("community-chat")} />}
         {view === "waifu-vote" && <WaifuVoteView user={user} onBack={() => setView("activity")} />}
+        {view === "community-chat" && <CommunityChatView user={user} onBack={() => setView("activity")} />}
         {view === "history" && <HistoryView onOpenStream={goStream} />}
         {view === "favorites" && <FavoritesView onOpenDetail={goDetail} />}
         {view === "profile" && <ProfileView user={user} onSignOut={handleSignOut} />}
