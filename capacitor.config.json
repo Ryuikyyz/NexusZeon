@@ -1,6 +1,6 @@
 {
-  "appId": "com.zedx.zedxplay",
-  "appName": "ZedxPlay",
+  "appId": "com.zedx.nexuszeon",
+  "appName": "NexusZeon",
   "webDir": "out",
   "bundledWebRuntime": false,
   "server": {
